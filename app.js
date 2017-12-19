@@ -26,12 +26,18 @@ app.get('/signup', (req, res) => {
   })
 })
 app.post('/signup', (req, res) => {
-  db.query('', (err, results, fields) => {
+
+  let username = req.body.username;
+  let email = req.body.email;
+  let password = req.body.password;
+  let passwordConfirm = req.body.passwordConfirm
+
+  db.query('INSERT INTO users (username, email, password) VALUES (?, ?, ?)', [username, email, password], (err, results, fields) => {
     if (err) {
       res.send('broken forevaaaaa ')
     }
-
   })
+
   res.render('registration', {
     test: 'WORKING NOW AND SIGNED UP AND STUFF'
   });
