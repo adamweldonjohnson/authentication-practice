@@ -24,6 +24,22 @@ app.get('/', (req, res) => {
     heading: 'home'
   })
 })
+
+// -------SIGN IN-------
+app.get('/signin', (req, res) => {
+  res.render('signin', {
+    heading: 'signin'
+  })
+})
+
+app.post('/signin', (req, res) => {
+  // VALIDATION GOES HERE
+  // HASHING GOES HERE
+  // QUERY DB FOR USERNAME
+  // COMPARE HASHED PASSWORDS
+  let username = req.body.username;
+  let email = req.body.email;
+})
 // ------------SIGNUP-----------
 app.get('/signup', (req, res) => {
   res.render('registration', {
