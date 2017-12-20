@@ -9,6 +9,11 @@
     </div>
   {{/each}}
 {{/if}}
+{{#if error}}
+    <div class="notification is-danger errmsg">
+      {{error}}
+    </div>
+{{/if}}
 <div class="card">
   <div class="card-header">
     <h2>Sign up!</h2>

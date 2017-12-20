@@ -8,6 +8,7 @@ const {
   check,
   validationResult
 } = require('express-validator/check');
+const bcrypt = require('bcrypt');
 
 let app = express();
 
@@ -88,21 +89,43 @@ app.post('/signup', [
       errors: err.array()
     });
     // CODE BELOW RUNS IF NO CHECK ERRORS FOUND
-  } else {
+  }
+  // RUNS IF NO ERRORS
+  else {
     let username = req.body.username;
     let email = req.body.email;
     let password = req.body.password;
     let passwordConfirm = req.body.passwordConfirm
-    // INSERTS PASSED USER VALUES INTO DB, INSERTS VALUES FOR '?' WITH CHECKED UN, EMAIL, PW VARIABLES
-    db.query('INSERT INTO users (username, email, password) VALUES (?, ?, ?)', [username, email, password], (err, results, fields) => {
-      if (err) {
-        res.send('DB broken forevaaaaa ')
-      }
-    })
-    // SENDS VALIDATION FOR USER REGISTRATION
-    res.render('registration', {
-      heading: 'WORKING NOW AND SIGNED UP AND STUFF'
+    let bcrypt = require('bcrypt');
+    const saltRounds = 10;
+    const someOtherPlaintextPassword = 'not_bacon';
+
+    // USES BCRYPT HASHING FOR DB INTERACTIONS
+    bcrypt.hash(password, saltRounds, function(err, hash) {
+      // INSERTS PASSED USER VALUES INTO DB, INSERTS VALUES FOR '?' WITH CHECKED UN, EMAIL, PW VARIABLES
+      db.query('INSERT INTO users (username, email, password) VALUES (?, ?, ?)', [username, email, hash], (err, results, fields) => {
+        if (err) {
+          if (err.code === 'ER_DUP_ENTRY') {
+            res.render('registration', {
+              heading: 'Sad user was sad...',
+              error: "There was an error..... You've already signed up!"
+            })
+          }
+          // console.log(err);
+          // res.send('DB broken forevaaaaa ');
+          return;
+        } else {
+          res.send('user added');
+          // // SENDS VALIDATION FOR USER REGISTRATION
+          // res.render('registration', {
+          //   heading: 'WORKING NOW AND SIGNED UP AND STUFF'
+          //  });
+        }
+
+      })
     });
+
+
   }
 })
 
