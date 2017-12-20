@@ -9,20 +9,62 @@ const {
   validationResult
 } = require('express-validator/check');
 const bcrypt = require('bcrypt');
+const passport = require('passport');
+const cookieParser = require('cookie-parser');
+const expressSession = require('express-session');
+const LocalStrategy = require('passport-local').Strategy;
 
 let app = express();
 
+hbs.registerPartials(__dirname + '/views/partials')
 app.use(express.static(__dirname + '/static'));
 app.set('view engine', 'hbs');
-hbs.registerPartials(__dirname + '/views/partials')
+app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
   extended: false
 }))
+app.use(expressSession({
+  secret: 'jl1234oixcju0fpoopypants',
+  resave: false,
+  saveUninitialized: false
+}))
+passport.use(new LocalStrategy((username, password, done) => {
+  db.query('SELECT id, password FROM users WHERE username = ?', username, (err, results, fields) => {
+    if (err) {
+      done('you have an error ' + err);
+    }
+    if (results.length === 0) {
+      console.log('attempted');
+      done(null, false);
+    } else {
+      const hash = results[0].password.toString();
+      bcrypt.compare(password, hash, (err, results) => {
+        if (results === true) {
+          done(null, true)
+        } else {
+          done(null, false)
+        }
+      })
+      done(null, true)
+    }
+  });
+}));
 
-// ----ENDPOINTS----
+app.use(passport.initialize());
+app.use(passport.session());
+
+// --------------ENDPOINTS-------------
+// ----HOME---
 app.get('/', (req, res) => {
   res.render('home', {
-    heading: 'home'
+    heading: 'This is the homepage with a big photo.'
+  })
+})
+
+// --------PROFILE------
+app.get('/profile', (req, res) => {
+  res.render('profile', {
+    heading: 'This is the profile page.'
   })
 })
 
@@ -33,18 +75,11 @@ app.get('/login', (req, res) => {
   })
 })
 
-app.post('/login', (req, res) => {
-  res.render('signin', {
-    heading: 'Logged In!'
-  })
+app.post('/login', passport.authenticate('local', {
+  successRedirect: '/profile',
+  failureRedirect: '/login'
+}))
 
-  let username = req.body.username;
-  let email = req.body.email;
-  // VALIDATION GOES HERE
-  // HASHING GOES HERE
-  // QUERY DB FOR USERNAME
-  // COMPARE HASHED PASSWORDS
-})
 // ------------SIGNUP-----------
 app.get('/signup', (req, res) => {
   res.render('registration', {
@@ -129,6 +164,15 @@ app.post('/signup', [
   }
 })
 
+
+// ==========PASSPORT SERIALIZATION/DESERIALIZATION===========
+passport.serializeUser(function(user, done) {
+  done(null, user);
+});
+
+passport.deserializeUser(function(id, done) {
+  done(null, id);
+});
 
 // -----LISTENING-----
 app.listen(3008, () => {
