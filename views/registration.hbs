@@ -4,7 +4,7 @@
 <h1>{{heading}}</h1>
 {{#if errors}}
   {{#each errors}}
-    <div class="notification is-danger">
+    <div class="notification is-danger errmsg">
       {{msg}}
     </div>
   {{/each}}
@@ -54,8 +54,17 @@
 </div>
 
 <style>
-  .card {
+  .card, .errmsg {
     max-width: 60%;
     margin: auto;
+  }
+
+  .card-header {
+    background-color: #00d1b2;
+    color: white;
+  }
+
+  input[type="text"],input[type="email"],input[type="password"] {
+    border: 1px solid  #00d1b2;
   }
 </style>
