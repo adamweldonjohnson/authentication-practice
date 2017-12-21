@@ -13,8 +13,19 @@ const passport = require('passport');
 const cookieParser = require('cookie-parser');
 const expressSession = require('express-session');
 const LocalStrategy = require('passport-local').Strategy;
+const mySQLStore = require('express-mysql-session');
 
 let app = express();
+
+var options = {
+  host: 'localhost',
+  port: 3306,
+  user: 'root',
+  password: 'Awj03130!',
+  database: 'auth-practice',
+};
+
+var sessionStore = new mySQLStore(options);
 
 hbs.registerPartials(__dirname + '/views/partials')
 app.use(express.static(__dirname + '/static'));
@@ -26,7 +37,8 @@ app.use(bodyParser.urlencoded({
 app.use(expressSession({
   secret: 'jl1234oixcju0fpoopypants',
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: false,
+  store: sessionStore
 }))
 passport.use(new LocalStrategy((username, password, done) => {
   db.query('SELECT id, password FROM users WHERE username = ?', username, (err, results, fields) => {
@@ -38,14 +50,16 @@ passport.use(new LocalStrategy((username, password, done) => {
       done(null, false);
     } else {
       const hash = results[0].password.toString();
-      bcrypt.compare(password, hash, (err, results) => {
-        if (results === true) {
-          done(null, true)
+      bcrypt.compare(password, hash, (err, res) => {
+        if (res === true) {
+          done(null, {
+            user: results[0].id
+          })
         } else {
           done(null, false)
         }
       })
-      done(null, true)
+      // done(null, true)
     }
   });
 }));
@@ -61,8 +75,16 @@ app.get('/', (req, res) => {
   })
 })
 
+// --------LOGOUT-------
+app.get('/logout', (req, res) => {
+  res.send('working')
+})
+
 // --------PROFILE------
 app.get('/profile', (req, res) => {
+  console.log(req.user);
+  console.log(req.isAuthenticated());
+
   res.render('profile', {
     heading: 'This is the profile page.'
   })
