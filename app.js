@@ -14,6 +14,7 @@ const cookieParser = require('cookie-parser');
 const expressSession = require('express-session');
 const LocalStrategy = require('passport-local').Strategy;
 const mySQLStore = require('express-mysql-session');
+const flash = require('connect-flash');
 
 let app = express();
 
@@ -34,12 +35,14 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
   extended: false
 }))
+app.use(flash())
 app.use(expressSession({
   secret: 'jl1234oixcju0fpoopypants',
   resave: false,
   saveUninitialized: false,
   store: sessionStore
 }))
+
 passport.use(new LocalStrategy((username, password, done) => {
   db.query('SELECT id, password FROM users WHERE username = ?', username, (err, results, fields) => {
     if (err) {
@@ -47,7 +50,9 @@ passport.use(new LocalStrategy((username, password, done) => {
     }
     if (results.length === 0) {
       console.log('attempted');
-      done(null, false);
+      done(null, false, {
+        message: 'Username and password do not match.'
+      });
     } else {
       const hash = results[0].password.toString();
       bcrypt.compare(password, hash, (err, res) => {
@@ -77,29 +82,40 @@ app.get('/', (req, res) => {
 
 // --------LOGOUT-------
 app.get('/logout', (req, res) => {
-  res.send('working')
+  req.logout();
+  req.session.destroy();
+  res.redirect('/login')
 })
 
 // --------PROFILE------
-app.get('/profile', (req, res) => {
-  console.log(req.user);
-  console.log(req.isAuthenticated());
+app.get('/profile', isAuthenticatedMiddleware(), (req, res) => {
+  // console.log(req.user);
+  // console.log(req.isAuthenticated());
+  db.query('SELECT * FROM users WHERE id = ?', req.user.user, (err, results, fields) => {
+    let username = results[0].username
+    let email = results[0].email
 
-  res.render('profile', {
-    heading: 'This is the profile page.'
+    res.render('profile', {
+      heading: 'This is the profile page.',
+      user: req.user.user_id,
+      username,
+      email
+    });
   })
 })
 
 // -------SIGN IN-------
 app.get('/login', (req, res) => {
   res.render('signin', {
-    heading: 'Login'
+    heading: 'Login',
+    message: req.flash('error')
   })
 })
 
 app.post('/login', passport.authenticate('local', {
   successRedirect: '/profile',
-  failureRedirect: '/login'
+  failureRedirect: '/login',
+  failureFlash: true
 }))
 
 // ------------SIGNUP-----------
@@ -172,19 +188,21 @@ app.post('/signup', [
           // res.send('DB broken forevaaaaa ');
           return;
         } else {
-          res.send('user added');
-          // // SENDS VALIDATION FOR USER REGISTRATION
-          // res.render('registration', {
-          //   heading: 'WORKING NOW AND SIGNED UP AND STUFF'
-          //  });
+          db.query('SELECT LAST_INSERT_ID() as user', (err, results, fields) => {
+            if (err) {
+              res.send('It\'s totally broken, sorry!')
+            } else {
+              req.login(results[0], (err) => {
+                res.redirect('/profile')
+              })
+            }
+          })
         }
-
       })
-    });
-
-
+    })
   }
 })
+
 
 
 // ==========PASSPORT SERIALIZATION/DESERIALIZATION===========
@@ -195,6 +213,17 @@ passport.serializeUser(function(user, done) {
 passport.deserializeUser(function(id, done) {
   done(null, id);
 });
+
+// ==========AUTHENTICATION CHECK FUNCTION===========
+function isAuthenticatedMiddleware() {
+  return (req, res, next) => {
+    if (req.isAuthenticated()) {
+      next();
+    } else {
+      res.redirect('/login')
+    }
+  }
+}
 
 // -----LISTENING-----
 app.listen(3008, () => {

@@ -4,14 +4,19 @@
 <h1>{{heading}}</h1>
 {{#if errors}}
   {{#each errors}}
-    <div class="notification is-danger">
+    <div class="notification is-danger errmsg">
       {{msg}}
     </div>
   {{/each}}
 {{/if}}
 {{#if error}}
-    <div class="notification is-danger">
+    <div class="notification is-danger errmsg">
       {{msg}}
+    </div>
+{{/if}}
+{{#if message}}
+    <div class="notification is-danger errmsg">
+      {{message}}
     </div>
 {{/if}}
 <div class="card">
@@ -49,7 +54,7 @@
 </div>
 
 <style>
-  .card {
+  .card, .errmsg {
     max-width: 60%;
     margin: auto;
   }

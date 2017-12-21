@@ -3,6 +3,17 @@
 <div class="wrapper">
 <h1>{{heading}}</h1>
 </div>
+<h1 class="title">Edit your info</h1>
+<p>{{user}}</p>
+<p>{{username}}</p>
+<p>{{email}}</p>
+<form method="POST" action="/user-update">
+  Username:<input value="{{username}}" name="username"/><br />
+  Email:<input value="{{email}}" name="email"/><br />
+  New Password:<input value="" name="password"/><br />
+  Verify New Password:<input value="" name="passwordVerify" /><br />
+<input type="submit" value="Update Your Profile">
+</form>
 
 <style>
 .wrapper {
